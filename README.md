@@ -41,7 +41,7 @@ sudo pacman -S --needed cmake ninja just gperf python boost range-v3 tl-expected
 Then:
 
 ```
-git clone --recurse-submodules -b linux https://github.com/Deseara/exDesktop.git
+git clone --recurse-submodules -b linux https://github.com/ForGetMyAlias/exDesktop.git
 cd exDesktop
 ./build-linux.sh                 # or: ./build-linux.sh API_ID API_HASH
 out/bin/Telegram

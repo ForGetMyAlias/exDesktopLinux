@@ -14,7 +14,7 @@ namespace Extera::Update {
 namespace {
 
 constexpr auto kExteraBuild = 2;
-constexpr auto kRepo = "Deseara/exDesktop"_cs; // Releases of this fork.
+constexpr auto kRepo = "ForGetMyAlias/exDesktop"_cs; // Releases of this fork.
 constexpr auto kCheckInterval = 6 * 60 * 60 * crl::time(1000);
 constexpr auto kFirstCheckDelay = 10 * crl::time(1000);
 
