@@ -343,7 +343,12 @@ void Launcher::init() {
 	prepareSettings();
 	initQtMessageLogging();
 
+#ifdef Q_OS_LINUX
+	// Separate data dir (~/.local/share/exDesktop) from official Telegram Desktop.
+	QApplication::setApplicationName(u"exDesktop"_q);
+#else // Q_OS_LINUX
 	QApplication::setApplicationName(u"TelegramDesktop"_q);
+#endif // Q_OS_LINUX
 
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 	// fallback session management is useless for tdesktop since it doesn't have

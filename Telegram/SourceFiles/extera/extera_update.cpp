@@ -14,6 +14,7 @@ namespace Extera::Update {
 namespace {
 
 constexpr auto kExteraBuild = 2;
+constexpr auto kRepo = "Deseara/exDesktop"_cs; // Releases of this fork.
 constexpr auto kCheckInterval = 6 * 60 * 60 * crl::time(1000);
 constexpr auto kFirstCheckDelay = 10 * crl::time(1000);
 
@@ -64,7 +65,7 @@ void Check(Fn<void(CheckResult)> done = nullptr) {
 		state.manager = new QNetworkAccessManager(qApp);
 	}
 	auto request = QNetworkRequest(QUrl(
-		u"https://api.github.com/repos/metawka/exDesktop/releases/latest"_q));
+		u"https://api.github.com/repos/"_q + kRepo.utf16() + u"/releases/latest"_q));
 	request.setRawHeader("Accept", "application/vnd.github+json");
 	request.setRawHeader("User-Agent", "exDesktop");
 	const auto reply = state.manager->get(request);
@@ -126,7 +127,7 @@ QString AvailableVersion() {
 void OpenRelease() {
 	const auto &url = Instance().url;
 	UrlClickHandler::Open(url.isEmpty()
-		? u"https://github.com/metawka/exteraDesktop/releases/latest"_q
+		? u"https://github.com/"_q + kRepo.utf16() + u"/releases/latest"_q
 		: url);
 }
 

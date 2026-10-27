@@ -28,6 +28,17 @@ An unofficial Windows client built from the official [Telegram Desktop](https://
 ## Downloads
 Get the installer or portable archive from the [releases page](https://github.com/metawka/exDesktop/releases). Both packages include the `python` folder needed by plugins. The client installs beside Telegram Desktop and keeps its data separate.
 
+## Linux
+Unofficial Linux port of exDesktop (fork of [metawka/exDesktop](https://github.com/metawka/exDesktop)). Uses the system Python for plugins, installs as `exDesktop` with its own app id (`org.exdesktop.desktop`) and data dir (`~/.local/share/exDesktop`), and imports accounts once from `~/.local/share/64Gram` if present.
+
+Arch dependencies: see the [telegram-desktop PKGBUILD](https://gitlab.archlinux.org/archlinux/packaging/packages/telegram-desktop) plus `python`. Then:
+
+```
+git submodule update --init --recursive
+./build-linux.sh [API_ID API_HASH]
+out/bin/Telegram
+```
+
 ## API credentials
 Get your own API ID and hash from [Telegram's API credentials page](https://core.telegram.org/api/obtaining_api_id). Pass them to the configure script when generating the project files:
 

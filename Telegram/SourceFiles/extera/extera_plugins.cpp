@@ -34,6 +34,7 @@
 
 #include <QtCore/QDir>
 #include <QtCore/QFile>
+#include <QtCore/QStandardPaths>
 
 #ifdef Q_OS_WIN
 #include <windows.h>
@@ -78,7 +79,22 @@ private:
 };
 
 [[nodiscard]] QString RuntimePath() {
+#ifdef Q_OS_WIN
 	return cExeDir() + u"python/"_q;
+#else // Q_OS_WIN
+	// Build tree: next to the binary. Installed: <prefix>/share/exdesktop/python/.
+	const auto marker = u"python/extera/extera_host.py"_q;
+	if (QFile::exists(cExeDir() + marker)) {
+		return cExeDir() + u"python/"_q;
+	}
+	for (const auto &dir : QStandardPaths::standardLocations(
+			QStandardPaths::GenericDataLocation)) {
+		if (QFile::exists(dir + u"/exdesktop/"_q + marker)) {
+			return dir + u"/exdesktop/python/"_q;
+		}
+	}
+	return cExeDir() + u"python/"_q;
+#endif // Q_OS_WIN
 }
 
 [[nodiscard]] QString DataPath() {
@@ -407,6 +423,33 @@ PyObject *InitNativeModule() {
 	return PyModule_Create(&NativeModule);
 }
 
+#ifndef Q_OS_WIN
+// Linux/macOS: use the system Python, only add our modules to sys.path.
+[[nodiscard]] bool InitInterpreter(const QString &runtime) {
+	auto config = PyConfig();
+	PyConfig_InitPythonConfig(&config);
+	config.write_bytecode = 0;
+	config.install_signal_handlers = 0;
+	const auto status = Py_InitializeFromConfig(&config);
+	PyConfig_Clear(&config);
+	if (PyStatus_Exception(status)) {
+		Instance().error = QString::fromUtf8(status.err_msg
+			? status.err_msg
+			: "Python init failed");
+		return false;
+	}
+	const auto path = PySys_GetObject("path"); // Borrowed.
+	const auto extra = PyUnicode_FromString(
+		(runtime + u"extera"_q).toUtf8().constData());
+	if (!path || !extra || PyList_Append(path, extra) != 0) {
+		Py_XDECREF(extra);
+		Instance().error = u"sys.path setup failed"_q;
+		return false;
+	}
+	Py_DECREF(extra);
+	return true;
+}
+#else // !Q_OS_WIN
 [[nodiscard]] bool InitInterpreter(const QString &runtime) {
 	auto config = PyConfig();
 	PyConfig_InitIsolatedConfig(&config);
@@ -447,6 +490,7 @@ PyObject *InitNativeModule() {
 	PyConfig_Clear(&config);
 	return true;
 }
+#endif // !Q_OS_WIN
 
 } // namespace
 

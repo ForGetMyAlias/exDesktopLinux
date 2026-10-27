@@ -233,7 +233,7 @@ bool GenerateDesktopFile(
 	DEBUG_LOG(("App Info: placing .desktop file to %1").arg(targetPath));
 	if (!QDir(targetPath).exists()) QDir().mkpath(targetPath);
 
-	const auto sourceFile = u":/misc/org.telegram.desktop.desktop"_q;
+	const auto sourceFile = u":/misc/org.exdesktop.desktop.desktop"_q;
 	const auto targetFile = targetPath
 		+ QGuiApplication::desktopFileName()
 		+ u".desktop"_q;
@@ -372,7 +372,7 @@ bool GenerateDesktopFile(
 		hashMd5Hex(d.constData(), d.size(), md5Hash);
 
 		if (!Core::Launcher::Instance().customWorkingDir()) {
-			QFile::remove(u"%1org.telegram.desktop._%2.desktop"_q.arg(
+			QFile::remove(u"%1org.exdesktop.desktop._%2.desktop"_q.arg(
 				targetPath,
 				md5Hash));
 
@@ -381,7 +381,7 @@ bool GenerateDesktopFile(
 			hashMd5Hex(exePath.constData(), exePath.size(), md5Hash);
 		}
 
-		QFile::remove(u"%1org.telegram.desktop.%2.desktop"_q.arg(
+		QFile::remove(u"%1org.exdesktop.desktop.%2.desktop"_q.arg(
 			targetPath,
 			md5Hash));
 	}
@@ -440,7 +440,7 @@ bool GenerateServiceFile(bool silent = false) {
 		const auto d = QFile::encodeName(QDir(cWorkingDir()).absolutePath());
 		hashMd5Hex(d.constData(), d.size(), md5Hash);
 
-		QFile::remove(u"%1org.telegram.desktop._%2.service"_q.arg(
+		QFile::remove(u"%1org.exdesktop.desktop._%2.service"_q.arg(
 			targetPath,
 			md5Hash));
 	}
@@ -685,6 +685,56 @@ QString ExecutablePathForShortcuts() {
 
 } // namespace Platform
 
+namespace {
+
+void CopyRecursively(const QString &from, const QString &to) {
+	QDir().mkpath(to);
+	const auto entries = QDir(from).entryInfoList(
+		QDir::Files | QDir::Dirs | QDir::NoDotAndDotDot | QDir::Hidden);
+	for (const auto &entry : entries) {
+		const auto target = to + '/' + entry.fileName();
+		if (entry.isDir()) {
+			CopyRecursively(entry.filePath(), target);
+		} else {
+			QFile::remove(target);
+			QFile::copy(entry.filePath(), target);
+		}
+	}
+}
+
+// One-time import of accounts from 64Gram (same tdata format). Copies login
+// keys, settings and account maps, skips media caches. Never touches the source.
+void ImportFrom64Gram(const QString &appData) {
+	const auto source = QStandardPaths::writableLocation(
+		QStandardPaths::GenericDataLocation) + u"/64Gram/tdata/"_q;
+	const auto target = appData + u"tdata/"_q;
+	if (!QFile::exists(source + u"key_datas"_q)
+		|| QFile::exists(target + u"key_datas"_q)) {
+		return;
+	}
+	const auto skip = QStringList{
+		u"user_data"_q, u"audio_cache"_q, u"dumps"_q, u"working"_q,
+		u"emoji"_q, u"dictionaries"_q,
+	};
+	const auto entries = QDir(source).entryInfoList(
+		QDir::Files | QDir::Dirs | QDir::NoDotAndDotDot | QDir::Hidden);
+	for (const auto &entry : entries) {
+		const auto name = entry.fileName();
+		if (name.startsWith(u"user_data"_q) || skip.contains(name)) {
+			continue;
+		}
+		if (entry.isDir()) {
+			CopyRecursively(entry.filePath(), target + name);
+		} else {
+			QDir().mkpath(target);
+			QFile::remove(target + name);
+			QFile::copy(entry.filePath(), target + name);
+		}
+	}
+}
+
+} // namespace
+
 QString psAppDataPath() {
 	// Previously we used ~/.TelegramDesktop, so look there first.
 	// If we find data there, we should still use it.
@@ -699,7 +749,9 @@ QString psAppDataPath() {
 		}
 	}
 
-	return QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + '/';
+	const auto result = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + '/';
+	ImportFrom64Gram(result);
+	return result;
 }
 
 void psDoCleanup() {
@@ -738,11 +790,11 @@ void start() {
 		}
 
 		if (!Core::UpdaterDisabled()) {
-			return u"org.telegram.desktop._%1"_q.arg(
+			return u"org.exdesktop.desktop._%1"_q.arg(
 				Core::Launcher::Instance().instanceHash().constData());
 		}
 
-		return u"org.telegram.desktop"_q;
+		return u"org.exdesktop.desktop"_q;
 	}());
 
 	LOG(("App ID: %1").arg(QGuiApplication::desktopFileName()));
